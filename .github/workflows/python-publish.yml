@@ -1,0 +1,79 @@
+# This workflows will upload a Python Package using Twine when a release is created
+# For more information see: https://help.github.com/en/actions/language-and-framework-guides/using-python-with-github-actions#publishing-to-package-registries
+
+name: Upload Python Package
+
+import telebot
+import openpyxl
+
+wb = openpyxl.load_workbook('1111.xlsx')
+column = 2
+level = 'A'
+predmets = wb.sheetnames
+levels = ["огэ","егэ","олимпиады"]
+mid=0
+
+bot = telebot.TeleBot('1159532742:AAF40D9hcZ3OFDaC8DZ3nSjDj52hcvkOOTQ')
+
+
+
+def out(mid,s):
+
+    bot.send_message(mid,s)
+
+def getlevel(s):
+    level = s[4:]
+    if level==levels[0]:
+        level = 'A'
+    elif level==levels[1]:
+        level = 'C'
+    elif level==levels[2]:
+        level = 'E'
+    return level
+
+def prov(s):
+    if s[:3].lower() in predmets and s[4:].lower() in levels:
+        return True
+    return False
+
+def give_all(mid,s):
+    column=2
+    level = getlevel(s)
+    sheet = wb[s[:3].lower()]
+    kniga = sheet[level + str(column)].value
+    while kniga:
+        out(mid,kniga)
+        column += 1
+        kniga = sheet[level + str(column)].value
+
+
+@bot.message_handler(commands=['start','again'])
+def start_message(message):
+    mid = message.chat.id
+    out(mid,'Привет. Я - бот с книгами и курсами для учебы, подготовки к '
+            'огэ,егэ и олимпиадам. Сейчас я научу тебя пользоваться мной. ')
+    out(mid,'Ты можешь выбрать предмет и мероприятие, к которому готовишься.')
+    out(mid,'Запрос делаешь в виде: предмет_уровень, где: ')
+    out(mid,'\'предмет\' - сокращение из трех первых букв  предмета, выбери его из:')
+    for pr in predmets:
+        out(mid,pr)
+    out(mid,'\'уровень\' - мероприятие, к которому готовишься, выбери его из:')
+    for pr in levels:
+        out(mid, pr)
+    out(mid, 'Тогда твой запрос выглядит как, например, \'мат_егэ\'. ')
+    out(mid,'Жду запрос...')
+
+
+
+@bot.message_handler(content_types=['text'])
+def send_text(message):
+    mid = message.chat.id
+    pr = prov(message.text)
+    if pr:
+        out(mid,'Получи свои материалы: ')
+        give_all(mid,message.text)
+        out(mid,'Можешь сделать еще запрос или /start')
+    else:
+        out(mid, 'введи запрос правильно!')
+
+bot.polling()
